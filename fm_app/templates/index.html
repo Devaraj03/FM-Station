@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radio Player - Spotify Style</title>
+<style>
+/* --- Global --- */
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#121212;color:#fff;height:100vh;display:flex;flex-direction:column;}
+
+/* --- Container --- */
+#container{display:flex;flex:1;overflow:hidden;}
+
+/* --- Sidebar --- */
+#sidebar{
+  width:220px;
+  background:#000;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  overflow-y:auto;
+  box-shadow: inset -1px 0 0 rgba(255,255,255,0.1);
+}
+/* Remove bullets and padding from lists */
+#sidebar ul{list-style:none;padding:0;margin:0;}
+
+#sidebar h2{color:#1db954;font-size:1.2rem;margin-bottom:10px;text-align:center;}
+.country-item, .station-item{
+  padding:8px 12px;
+  margin:4px 0;
+  border-radius:6px;
+  cursor:pointer;
+  transition:0.2s;
+  background:transparent;
+  color:#b3b3b3;
+}
+.country-item:hover, .station-item:hover{
+  color:#fff;
+  background: rgba(255,255,255,0.1);
+}
+.station-item.active{
+  color:#fff;
+  border-left:3px solid #1db954;
+}
+
+/* --- Sidebar scrollbar --- */
+#sidebar::-webkit-scrollbar { width:8px; }
+#sidebar::-webkit-scrollbar-track { background:#000; border-radius:4px; }
+#sidebar::-webkit-scrollbar-thumb { background:#1db954; border-radius:4px; border:2px solid #000; }
+#sidebar::-webkit-scrollbar-thumb:hover { background:#1ed760; }
+
+/* Firefox scrollbar */
+#sidebar { scrollbar-width: thin; scrollbar-color: #1db954 #000; }
+
+/* --- Search --- */
+#station-search{padding:6px;border-radius:5px;border:none;width:100%;background:#333;color:#fff;margin-bottom:10px;}
+
+/* --- Main --- */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#121212;}
+
+/* --- Station Cards --- */
+#stations-cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:12px;
+  padding:15px;
+  overflow-y:auto;
+}
+/* Station scrollbar */
+#stations-cards::-webkit-scrollbar { width:8px; }
+#stations-cards::-webkit-scrollbar-track { background:#121212; border-radius:4px; }
+#stations-cards::-webkit-scrollbar-thumb { background:#1db954; border-radius:4px; border:2px solid #121212; }
+#stations-cards::-webkit-scrollbar-thumb:hover { background:#1ed760; }
+#stations-cards { scrollbar-width: thin; scrollbar-color: #1db954 #121212; }
+
+.station-card{
+  background:#181818;
+  border-radius:10px;
+  padding:10px;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  transition:0.2s;
+}
+.station-card:hover{background:#282828;transform:translateY(-3px);}
+.station-card.active{border:2px solid #1db954;}
+.station-card img{width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:6px;}
+
+.station-cover-text {
+  width: 100%;
+  height: 100px;
+  border-radius: 8px;
+  background: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: bold;
+  text-align: center;
+  padding: 5px;
+  margin-bottom: 6px;
+  font-size:14px;
+}
+
+/* --- Player Bottom Bar --- */
+#player-container{
+  height:80px;
+  background:#1a1a1a;
+  border-top:1px solid #333;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+}
+#player-info{display:flex;align-items:center;gap:15px;}
+#station-cover{width:60px;height:60px;border-radius:8px;}
+#current-station{font-weight:bold;}
+.controls{display:flex;align-items:center;gap:10px;}
+.btn{background:#1db954;border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:bold;transition:0.2s;}
+.btn:hover{transform:scale(1.1);}
+#volume{width:100px;}
+
+/* --- Station name marquee --- */
+#station-marquee{
+  width:220px;
+  overflow:hidden;
+  white-space:nowrap;
+  position:relative;
+}
+
+#station-text{
+  display:inline-block;
+  padding-left:100%;
+  animation: marquee 10s linear infinite;
+  font-weight:bold;
+}
+
+
+/* --- Volume slider white --- */
+#volume{
+  -webkit-appearance:none;
+  appearance:none;
+  height:4px;
+  background:#fff;
+  border-radius:4px;
+  cursor:pointer;
+}
+
+/* Chrome / Edge */
+#volume::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:12px;
+  height:12px;
+  background:#ffffff;
+  border-radius:50%;
+}
+
+/* Firefox */
+#volume::-moz-range-thumb{
+  width:12px;
+  height:12px;
+  background:#fff;
+  border-radius:50%;
+  border:none;
+}
+
+@keyframes marquee{
+  0%{transform:translateX(0);}
+  100%{transform:translateX(-100%);}
+}
+
+/* --- Map optional --- */
+#map{display:none;height:300px;margin:10px;border-radius:10px;}
+
+/* --- Responsive --- */
+@media(max-width:900px){
+  #container{flex-direction:column;}
+  #sidebar{width:100%;height:auto;padding:10px;border-bottom:1px solid #333;}
+  #main{height:auto;}
+}
+
+@media(max-width:500px){
+  body{font-size:14px;}
+  #sidebar{display:flex;flex-direction:row;overflow-x:auto;overflow-y:hidden;height:60px;padding:5px;}
+  #sidebar h2{display:none;}
+  #sidebar ul{display:flex;flex-direction:row;gap:10px;}
+  .country-item,.station-item{padding:6px 10px;margin:0;white-space:nowrap;}
+  #stations-cards{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));padding:10px;gap:8px;}
+  #player-container{flex-direction:column;height:auto;padding:10px;}
+  #player-info{flex-direction:row;align-items:center;gap:10px;}
+  #volume{width:80px;}
+}
+</style>
+</head>
+<body>
+
+<div id="container">
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <h2>Countries</h2>
+    <ul id="countries"></ul>
+
+    <h2>Stations</h2>
+    <input type="text" id="station-search" placeholder="Search...">
+    <ul id="stations"></ul>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+    <div id="stations-cards"></div>
+    <div id="map"></div>
+  </div>
+</div>
+
+<!-- Bottom Player -->
+<div id="player-container">
+  <div id="player-info">
+    <img id="station-cover" src="" alt="Cover">
+    <div id="station-marquee">
+  <div id="station-text">Select a station...</div>
+</div>
+
+  </div>
+  <div class="controls">
+    <button class="btn" id="prev">⏮</button>
+    <button class="btn" id="play">▶</button>
+    <button class="btn" id="pause">⏸</button>
+    <button class="btn" id="stop">⏹</button>
+    <button class="btn" id="next">⏭</button>
+    <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5">
+  </div>
+</div>
+
+<script>
+// Audio player
+const player=document.createElement('audio');document.body.appendChild(player);
+
+const countriesEl=document.getElementById('countries');
+const stationsEl=document.getElementById('stations');
+const stationCardsEl=document.getElementById('stations-cards');
+const stationSearch=document.getElementById('station-search');
+const currentStationEl=document.getElementById('current-station');
+const coverEl=document.getElementById('station-cover');
+
+const playBtn=document.getElementById('play');
+const pauseBtn=document.getElementById('pause');
+const stopBtn=document.getElementById('stop');
+const prevBtn=document.getElementById('prev');
+const nextBtn=document.getElementById('next');
+const volumeSlider=document.getElementById('volume');
+
+let stationsList=[], currentIndex=-1;
+
+// Render station cards
+function renderStations(){
+  stationCardsEl.innerHTML='';
+  stationsList.forEach((st,i)=>{
+    const card=document.createElement('div');
+    card.classList.add('station-card');
+    if(i===currentIndex) card.classList.add('active');
+
+    if(st.cover_url){
+      const img=document.createElement('img');
+      img.src=st.cover_url;
+      card.appendChild(img);
+    }else{
+      const div=document.createElement('div');
+      div.classList.add('station-cover-text');
+      div.textContent=st.name;
+      card.appendChild(div);
+    }
+
+    const name=document.createElement('div');
+    name.textContent=st.name;
+    card.appendChild(name);
+
+    card.onclick=()=>playStation(i);
+    stationCardsEl.appendChild(card);
+  });
+}
+
+// Play station
+function playStation(index){
+  if(index<0||index>=stationsList.length) return;
+  currentIndex=index;
+  const st=stationsList[index];
+  player.src=st.stream_url;
+  player.play();
+  document.getElementById('station-text').textContent = "Playing • " + st.name;
+
+
+  if(st.cover_url){
+    coverEl.src=st.cover_url;
+    coverEl.style.display='block';
+  } else {
+    coverEl.style.display='none';
+  }
+
+  renderStations();
+}
+
+// Player controls
+playBtn.onclick=()=>player.play();
+pauseBtn.onclick=()=>player.pause();
+stopBtn.onclick=()=>{player.pause();player.currentTime=0;}
+prevBtn.onclick=()=>playStation(currentIndex-1);
+nextBtn.onclick=()=>playStation(currentIndex+1);
+volumeSlider.oninput=()=>player.volume=volumeSlider.value;
+
+// Search filter
+stationSearch.oninput=()=>{
+  const q=stationSearch.value.toLowerCase();
+  document.querySelectorAll('.station-card').forEach((el,i)=>{
+    el.style.display=stationsList[i].name.toLowerCase().includes(q)?'flex':'none';
+  });
+}
+
+// Load countries & stations
+fetch('/countries/')
+.then(res=>res.json())
+.then(countries=>{
+  countries.forEach(c=>{
+    const li=document.createElement('li');
+    li.textContent=c;
+    li.classList.add('country-item');
+    li.onclick=()=>{
+      fetch(`/stations/?country=${c}`)
+      .then(res=>res.json())
+      .then(data=>{
+        stationsList=data;
+        currentIndex=-1;
+        renderStations();
+      });
+    }
+    countriesEl.appendChild(li);
+  });
+});
+
+// Optional map toggle
+const mapEl=document.getElementById('map');
+let map=L.map('map').setView([20,0],2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+mapEl.style.display='none';
+</script>
+
+</body>
+</html>
